@@ -1,0 +1,113 @@
+#!/bin/sh
+
+RgName="Multi-NIC-VM"
+Location="westus"
+--
+# Create a resource group.
+az group create \
+--name $RgName \
+--location $Location
+
+# The address is assigned to the resource from a pool of IP adresses unique to each Azure region.
+# Download and view the file from https://www.microsoft.com/en-us/download/details.aspx?id=41653 that lists
+# the ranges for each region.
+
+PipName="PIP-WEB"
+az network public-ip create \
+--name $PipName \
+--resource-group $RgName \
+--location $Location \
+--allocation-method Static
+
+# Create a virtual network with one subnet
+
+VnetName="VNet1"
+VnetPrefix="10.0.0.0/16"
+VnetSubnet1Name="Front-End"
+VnetSubnet1Prefix="10.0.0.0/24"
+az network vnet create \
+--name $VnetName \
+--resource-group $RgName \
+--location $Location \
+--address-prefix $VnetPrefix \
+--subnet-name $VnetSubnet1Name \
+--subnet-prefix $VnetSubnet1Prefix
+
+# Create a second subnet within the VNet
+
+VnetSubnet2Name="Back-end"
+VnetSubnet2Prefix="10.0.1.0/24"
+az network vnet subnet create \
+--vnet-name $VnetName \
+--resource-group $RgName \
+--name $VnetSubnet2Name \
+--address-prefix $VnetSubnet2Prefix
+
+# Create a network interface connected to one of the subnets. The NIC is assigned a single dynamic private and
+# public IP address by default, but you can instead, assign static addresses, or no public IP address at all.
+# You can also assign multiple private or public IP addresses to each NIC. To learn more about IP addressing
+# options for NICs, enter the az network nic create -h command.
+
+Nic1Name="NIC-FE"
+PrivateIpAddress1="10.0.0.5"
+
+az network nic create \
+--name $Nic1Name \
+--resource-group $RgName \
+--location $Location \
+--subnet $VnetSubnet1Name \
+--vnet-name $VnetName \
+--private-ip-address $PrivateIpAddress1 \
+--public-ip-address $PipName
+
+# Create a second network interface and connect it to the other subnet. Though multiple NICs attached to the same
+# VM can be connected to different subnets, the subnets must all be within the same VNet. Add additional NICs as necessary.
+
+Nic2Name="NIC-BE"
+PrivateIpAddress2="10.0.1.5"
+
+az network nic create \
+--name $Nic2Name \
+--resource-group $RgName \
+--location $Location \
+--subnet $VnetSubnet2Name \
+--vnet-name $VnetName \
+--private-ip-address $PrivateIpAddress2
+
+# Create a VM and attach the two NICs.
+
+VmName="WEB"
+
+# Replace the value for the following **VmSize** variable with a value from the
+# https://docs.microsoft.com/azure/virtual-machines/virtual-machines-linux-sizes article. Not all VM sizes support
+# more than one NIC, so be sure to select a VM size that supports the number of NICs you want to attach to the VM.
+# You must create the VM with at least two NICs if you want to add more after VM creation. If you create a VM with
+# only one NIC, you can't add additional NICs to the VM after VM creation, regardless of how many NICs the VM supports.
+# The VM size specified in the following variable supports two NICs.
+
+VmSize="Standard_DS2"
+
+# Replace the value for the OsImage variable value with a value for *urn* from the output returned by entering the
+# az vm image list command.
+
+OsImage="credativ:Debian:8:latest"
+
+Username="adminuser"
+
+# Replace the following value with the path to your public key file.
+
+SshKeyValue="~/.ssh/id_rsa.pub"
+
+# Before executing the following command, add variable names of additional NICs you may have added to the script that
+# you want to attach to the VM. If creating a Windows VM, remove the **ssh-key-value** line and you'll be prompted for
+# the password you want to configure for the VM.
+
+az vm create \
+--name $VmName \
+--resource-group $RgName \
+--image $OsImage \
+--location $Location \
+--size $VmSize \
+--nics $Nic1Name $Nic2Name \
+--admin-username $Username \
+--ssh-key-value $SshKeyValue
