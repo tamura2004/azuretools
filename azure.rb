@@ -88,15 +88,53 @@ end
 #   )
 # end
 
+# Azure.run("az vm create",
+#   n: "vm3",
+#   g:  "tamura",
+#   image: "UbuntuLTS",
+#   l: "japanwest",
+#   size: "Basic_A0",
+#   storage_sku: "Standard_LRS",
+#   generate_ssh_keys: "",
+#   subnet: "/subscriptions/xxxx/resourceGroups/Mail-WJP_H/providers/Microsoft.Network/virtualNetworks/Mail-WJP_Vnet_H/subnets/Mail-WJP_Vnet-SN_H",
+#   debug: true
+# )  
 
-Azure.run("az vm create",
-  n: "vm3",
-  g:  "tamura",
-  image: "UbuntuLTS",
-  l: "japanwest",
-  size: "Basic_A0",
-  storage_sku: "Standard_LRS",
-  generate_ssh_keys: "",
-  subnet: "/subscriptions/xxxx/resourceGroups/Mail-WJP_H/providers/Microsoft.Network/virtualNetworks/Mail-WJP_Vnet_H/subnets/Mail-WJP_Vnet-SN_H",
-  debug: true
-)  
+# Azure.run("az network route-table create",
+#   g: "Mail-EJP_H",
+#   n: "Mail-EJP_RouteTable_H",
+#   l: "japaneast"
+# )
+
+# Azure.run("az network route-table route list",
+#   g: "Mail-EJP_H",
+#   route_table_name: "Mail-EJP_RouteTable_H"
+# )
+
+# Azure.run("az network route-table route create",
+#   g: "Mail-EJP_H",
+#   n: "Mail-EJP_RouteToIpc_H",
+#   route_table_name: "Mail-EJP_RouteTable_H",
+#   address_prefix: "0.0.0.0/0",
+#   next_hop_type: "internet"
+# )
+
+# Azure.run("az network vnet subnet update",
+#   vnet_name: "Mail-EJP_Vnet_H",
+#   n: "Mail-EJP_Vnet-SN_H",
+#   route_table: "Mail-EJP_RouteTable_H"
+# )
+
+# Azure.run("az network route-table route list",
+#   g: "Mail-EJP_H",
+#   route_table_name: "Mail-EJP_RouteTable_H"
+# )
+
+Azure.run("az network express-route list-route-tables",
+  n: "Expressroute-H",
+  g: "Mail-EJP_H",
+  peering_name: "AzurePrivatePeering",
+  path: "primary"
+)
+
+
